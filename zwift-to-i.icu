@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+# -*- coding: utf-8; fill-column: 120; truncate-lines: t -*-
+
+import re
+import sys
+
+import requests
+from bs4 import BeautifulSoup
+
+
+def workout(url):
+    name = url.rpartition('/')[2]
+    page = requests.get(url)
+    soup = BeautifulSoup(page.content, "html.parser")
+    results = soup.find(id=name).find_all(class_="textbar")
+    zwift = ''
+    for element in results:
+        zwift += element.text.strip()
+        zwift += '\n'
+    return zwift[0:-1]
+
+
+def convert(zwift):
+    icu = ""
+    multiplier = False
+
+    # expand multipliers into old text-format multiple lines :-o)
+    zwift = re.sub('FTP,', 'FTP,\n', zwift)
+    # expand multiplied lines
+    for line in zwift.split('\n'):
+        if re.match('^[1-9]+[xX] .*,\\s*\\Z', line):
+            icu += '\n' + line[:3] + '\n'
+            icu += '- ' + line[3:] + '\n'
+            multiplier = True
+        elif re.match('^[1-9]+[xX]', line):
+            icu += '\n' + line[:3] + '\n'
+            icu += '- ' + line[3:] + '\n'
+            multiplier = False
+        elif multiplier == True:
+            icu += '- ' + line + '\n\n'
+            multiplier = False
+        else:
+            icu += '- ' + line + '\n'
+
+    # replace words and fix grammar
+    icu = icu.replace('min', 'm').replace('sec', 's') \
+            .replace('from', 'ramp').replace(' to ', '-') \
+            .replace('FTP', '').replace(',', '').replace('@', '').replace('  ', ' ') \
+            .replace('\n+', '\n') + '\n'
+    icu = re.sub('([0-9]+m) ([0-9]+s)', '\\1\\2', icu)
+
+    return icu
+
+
+
+if __name__ == '__main__':
+    print(convert(workout(sys.argv[1])))
