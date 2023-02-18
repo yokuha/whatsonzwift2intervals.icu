@@ -1,5 +1,17 @@
 #!/usr/bin/env python
-# -*- coding: utf-8; fill-column: 120; truncate-lines: t -*-
+# Copyright (C) 2021,2022,2023 yokuha
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program. If not, see <https://www.gnu.org/licenses/>.
 
 import re
 import sys
@@ -7,6 +19,16 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 
+
+def comment(url):
+    name = url.rpartition('/')[2]
+    page = requests.get(url)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    title = soup.title.text
+    title = title.replace('\n', '') \
+                 .replace('| What\'s on Zwift?', '\n(extracted from "What\'s on Zwift?" by whatsonzwift2intervals.icu)') \
+                 .replace('Zwift workouts: ', '')
+    return f'{title}\n{url}'
 
 def workout(url):
     name = url.rpartition('/')[2]
@@ -54,4 +76,12 @@ def convert(zwift):
 
 
 if __name__ == '__main__':
+    print(f'{comment(sys.argv[1])}\n\n')
     print(convert(workout(sys.argv[1])))
+
+
+
+### Local Variables:
+### coding: utf-8
+### truncate-lines: t
+### End:
